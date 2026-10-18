@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INKDAY</title>
+<style>
+body{margin:0;background:#efeee8;color:#141414;font-family:Georgia,'Times New Roman',serif;}
+.mono{font-family:'Courier New',Courier,monospace;}
+.lbl{font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#555;}
+
+#flash{position:fixed;left:0;top:0;right:0;bottom:0;background:#000;opacity:0;z-index:99;
+  pointer-events:none;-webkit-transition:opacity .12s linear;transition:opacity .12s linear;}
+
+#topbar{border-bottom:3px solid #141414;padding:10px 14px;}
+#topbar .brand{float:left;font-weight:bold;font-style:italic;font-size:20px;}
+#topbar .brand .mk{color:#555;}
+#topbar .ctl{float:right;}
+.clear{clear:both;}
+#topbar .lbl{margin-right:12px;}
+
+#page{max-width:720px;margin:0 auto;padding:14px 12px 20px;}
+.slide{display:none;}
+.slide.on{display:block;}
+.ph{border-bottom:2px solid #141414;padding-bottom:6px;margin:4px 0 14px;}
+.ph .chap{font-family:'Courier New',monospace;font-size:10px;font-weight:bold;letter-spacing:3px;color:#555;}
+.ph .ptitle{font-size:22px;font-weight:bold;margin-left:10px;}
+
+.panel{border:2px solid #141414;background:#f6f5f0;padding:14px;margin-bottom:14px;position:relative;}
+.nextup{border:2px dashed #141414;background:#e9e8e0;padding:12px;margin-bottom:14px;}
+.nu-text{font-weight:bold;font-size:16px;margin:6px 0 2px;}
+.nu-count{font-size:26px;font-weight:bold;font-family:'Courier New',monospace;}
+
+button{font-family:'Courier New',monospace;font-weight:bold;font-size:14px;letter-spacing:1px;
+  border:2px solid #141414;background:#f6f5f0;color:#141414;padding:12px 16px;margin:2px;cursor:pointer;}
+button:active{background:#141414;color:#f6f5f0;}
+button.small{font-size:12px;padding:8px 10px;}
+button.onbtn{background:#141414;color:#f6f5f0;}
+input,select{font-family:Georgia,serif;font-size:16px;border:2px solid #141414;background:#e9e8e0;color:#141414;padding:10px;}
+
+/* clock */
+.digits{font-size:92px;font-weight:bold;line-height:1;letter-spacing:-2px;}
+.ampm{display:inline-block;vertical-align:top;font-family:'Courier New',monospace;font-weight:bold;font-size:20px;margin-top:10px;}
+.sscell{border:2px solid #141414;background:#e9e8e0;display:inline-block;padding:4px 8px;margin-top:8px;font-family:'Courier New',monospace;font-weight:bold;font-size:16px;}
+.sscell i{font-style:normal;font-size:9px;letter-spacing:2px;color:#555;}
+#ticks{border:2px solid #141414;background:#e9e8e0;height:14px;padding:2px;margin:12px 0;font-size:0;}
+#ticks span{display:inline-block;width:1.2%;height:100%;margin-right:0.4%;}
+#ticks span.on{background:#141414;}
+.dateline{font-size:22px;font-style:italic;font-weight:bold;margin:6px 0 2px;}
+.greet{font-size:15px;color:#555;font-style:italic;margin:0 0 10px;}
+.barwrap{border:2px solid #141414;background:#e9e8e0;height:12px;margin-top:4px;}
+.barwrap i{display:block;height:100%;background:#141414;width:0;}
+table.meta{width:100%;border-collapse:collapse;font-size:14px;}
+table.meta td{border-bottom:1px solid #c5c4ba;padding:8px 2px;}
+table.meta td.k{font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:2px;color:#555;width:45%;}
+table.meta td.v{font-weight:bold;text-align:right;}
+
+/* tomato timer */
+.tomato{width:190px;height:190px;border:4px solid #141414;border-radius:50%;margin:14px auto 8px;position:relative;text-align:center;background:#e9e8e0;}
+.tomato:before{content:'';position:absolute;top:-18px;left:50%;margin-left:-2px;width:4px;height:16px;background:#141414;}
+.tomato .face{display:inline-block;margin-top:66px;font-family:'Courier New',monospace;font-weight:bold;font-size:42px;}
+.tomatoes{font-size:16px;letter-spacing:2px;}
+
+/* reminders */
+ul.rlist{list-style:none;margin:0;padding:0;}
+ul.rlist li{border-bottom:1px solid #c5c4ba;padding:10px 2px;}
+ul.rlist li:after{content:'';display:block;clear:both;}
+.check{float:left;width:34px;height:34px;padding:0;font-size:16px;margin-right:10px;}
+.del{float:right;border:none;background:none;font-size:22px;padding:2px 8px;}
+.rtext{font-size:16px;line-height:1.3;}
+li.done .rtext{text-decoration:line-through;color:#8a8a82;}
+.rmeta{font-family:'Courier New',monospace;font-size:11px;color:#555;margin-top:3px;}
+.chip{border:1px solid #8a8a82;padding:1px 5px;font-size:10px;letter-spacing:1px;}
+.chip.soon{background:#141414;color:#f6f5f0;border-color:#141414;}
+.chip.over{font-weight:bold;border:2px solid #141414;}
+.chip.done{color:#8a8a82;}
+.frow{margin-top:8px;}
+.rempty{font-style:italic;color:#8a8a82;}
+.daytag{border:2px dashed #555;color:#555;}
+.daytag.live{border-style:solid;border-color:#141414;color:#141414;}
+
+/* stats + log */
+.stat{display:inline-block;border-left:2px solid #c5c4ba;padding:2px 14px;margin:4px 0;}
+.stat.first{border-left:none;padding-left:0;}
+.stat b{display:block;font-size:26px;}
+.stat span{font-family:'Courier New',monospace;font-size:9px;font-weight:bold;letter-spacing:2px;color:#555;}
+ul.slog{list-style:none;margin:8px 0 0;padding:0;font-family:'Courier New',monospace;font-size:12px;}
+ul.slog li{border-bottom:1px solid #c5c4ba;padding:7px 2px;}
+ul.slog li.empty{font-family:Georgia,serif;font-style:italic;color:#8a8a82;}
+.stamp{display:none;border:3px solid #141414;padding:6px 12px;font-family:'Courier New',monospace;font-weight:bold;letter-spacing:3px;margin-bottom:10px;}
+.stamp.show{display:inline-block;}
+
+/* weather + quote */
+.wglyph{font-size:64px;line-height:1;}
+.wtemp{font-size:64px;font-weight:bold;line-height:1;}
+.wcond{font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px;color:#555;margin-top:6px;}
+blockquote{font-style:italic;font-size:22px;line-height:1.5;margin:6px 0;}
+cite{display:block;font-style:normal;font-family:'Courier New',monospace;font-size:12px;letter-spacing:2px;color:#555;margin-bottom:10px;}
+
+/* pager */
+#pager{max-width:720px;margin:0 auto;padding:0 12px 26px;text-align:center;}
+#pglabel{font-family:'Courier New',monospace;font-size:12px;font-weight:bold;letter-spacing:2px;color:#555;}
+.dot{display:inline-block;width:14px;height:14px;border:2px solid #141414;margin:0 3px;vertical-align:middle;cursor:pointer;}
+.dot.on{background:#141414;}
+
+.tz{position:fixed;top:0;bottom:0;width:48px;z-index:40;}
+.tz span{position:absolute;top:50%;margin-top:-24px;font-size:40px;color:#8a8a82;}
+#tzl{left:0;} #tzr{right:0;text-align:right;} #tzr span{right:6px;} #tzl span{left:6px;}
+
+/* dark mode */
+body.dark{background:#101010;color:#e8e8e2;}
+body.dark #topbar{border-color:#e8e8e2;}
+body.dark .panel,body.dark button,body.dark input,body.dark select{background:#1a1a1a;color:#e8e8e2;border-color:#e8e8e2;}
+body.dark .nextup,body.dark .tomato{background:#161616;border-color:#e8e8e2;}
+body.dark .tomato:before{background:#e8e8e2;}
+body.dark button.onbtn,body.dark #ticks span.on,body.dark .barwrap i,body.dark .dot.on,body.dark .chip.soon,body.dark li.done .check{background:#e8e8e2;color:#141414;}
+body.dark .check{border-color:#e8e8e2;background:#1a1a1a;}
+body.dark #ticks,body.dark .barwrap,body.dark .sscell{background:#161616;border-color:#e8e8e2;}
+body.dark .lbl,body.dark .greet,body.dark .rmeta,body.dark cite,body.dark .wcond,body.dark #pglabel,body.dark .stat span,body.dark .ph .chap,body.dark td.k,body.dark .sscell i{color:#a5a59b;}
+body.dark td,body.dark ul.rlist li,body.dark ul.slog li,body.dark .stat{border-color:#3d3d38;}
+body.dark .ph{border-color:#e8e8e2;}
+body.dark .del{color:#a5a59b;}
+body.dark .stamp{border-color:#e8e8e2;color:#e8e8e2;}
+body.dark .tz span{color:#4a4a44;}
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div id="topbar">
+  <span class="brand"><span class="mk">◈</span> INKDAY</span>
+  <span class="ctl">
+    <span class="lbl mono" id="netlabel">WI-FI</span>
+    <button class="small" id="btndark" type="button">DARK</button>
+    <button class="small" id="btnreink" type="button">RE-INK</button>
+  </span>
+  <div class="clear"></div>
+</div>
+
+<div id="page">
+
+  <!-- ===== PAGE 1 · CLOCK ON TOP, TOMATO BELOW ===== -->
+  <div class="slide on" id="s0">
+    <div class="ph"><span class="chap">CHAPTER I</span><span class="ptitle">The Clock</span></div>
+
+    <div class="panel">
+      <span class="lbl">LOCAL TIME</span> &nbsp; <span class="lbl" id="tztag"></span>
+      <div style="margin-top:6px;">
+        <span class="digits" id="hh">--</span><span class="digits">:</span><span class="digits" id="mm">--</span>
+        <span class="ampm" id="ampm">--</span>
+      </div>
+      <div><span class="sscell"><b id="ss">00</b> <i>SEC</i></span></div>
+      <div id="ticks"></div>
+      <p class="dateline" id="dateline">—</p>
+      <p class="greet" id="greet">—</p>
+      <span class="lbl">DAY ELAPSED <span id="daypct">0%</span></span>
+      <div class="barwrap"><i id="dayfill"></i></div>
+    </div>
+
+    <div class="panel">
+      <span class="stamp" id="stamp">TOMATO COMPLETE</span>
+      <span class="lbl">POMODORO · TOMATO TIMER</span>
+      <div class="tomato"><span class="face" id="trem">25:00</span></div>
+      <div class="barwrap" style="height:14px;margin:6px 0 10px;"><i id="tfill"></i></div>
+      <div style="text-align:center;">
+        <button class="small" id="t15" type="button">15m</button>
+        <button class="small onbtn" id="t25" type="button">25m</button>
+        <button class="small" id="t45" type="button">45m</button>
+        <button id="tstart" type="button">START</button>
+        <button class="small" id="treset" type="button">RESET</button>
+      </div>
+      <p class="greet" id="tnote" style="margin-top:10px;">One tomato = one focused session. Finish it to log it.</p>
+      <span class="lbl">TOMATOES TODAY</span>
+      <div class="tomatoes mono" id="tomatoes" style="margin-top:4px;">none yet</div>
+    </div>
+
+    <p class="greet">Tap the left / right screen edges to turn pages.</p>
+  </div>
+
+  <!-- ===== PAGE 2 · REMINDERS ===== -->
+  <div class="slide" id="s1">
+    <div class="ph"><span class="chap">CHAPTER II</span><span class="ptitle">Reminders</span></div>
+    <div class="nextup" id="nextup">
+      <span class="lbl">NEXT UP</span>
+      <p class="nu-text" id="nutext">—</p>
+      <span class="nu-count" id="nucount">--:--:--</span>
+    </div>
+    <div class="panel">
+      <span class="lbl">THE LIST</span> &nbsp; <button class="small" id="rclear" type="button" style="display:none;">CLEAR DONE</button>
+      <ul class="rlist" id="rlist" style="margin-top:8px;"></ul>
+      <p class="rempty" id="rempty" style="display:none;">Nothing scheduled. The page is blank — on purpose.</p>
+    </div>
+    <div class="panel">
+      <span class="lbl">ADD ONE</span>
+      <div class="frow"><input id="rtext" type="text" placeholder="Remind me to…" style="width:95%;" maxlength="90"></div>
+      <div class="frow">
+        <select id="rhh"></select> : <select id="rmm"></select>
+        <button id="radd" type="button">ADD</button>
+      </div>
+      <div class="frow">
+        <button class="small" id="p30" type="button">+30m</button>
+        <button class="small" id="p60" type="button">+1h</button>
+        <button class="small" id="p240" type="button">+4h</button>
+        <button class="small daytag" id="daytag" type="button">TODAY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 3 · STATS + LOG ===== -->
+  <div class="slide" id="s2">
+    <div class="ph"><span class="chap">CHAPTER III</span><span class="ptitle">The Log</span></div>
+    <div class="panel" style="text-align:center;">
+      <span class="stat first"><b id="st-ses">0</b><span>TOMATOES TODAY</span></span>
+      <span class="stat"><b id="st-min">0</b><span>MINUTES FOCUSED</span></span>
+      <span class="stat"><b id="st-task">0</b><span>TASKS DONE</span></span>
+      <span class="stat"><b id="st-streak">0</b><span>DAY STREAK</span></span>
+    </div>
+    <div class="panel">
+      <span class="lbl">SESSION LOG</span>
+      <ul class="slog" id="slog"></ul>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 4 · SKY ===== -->
+  <div class="slide" id="s3">
+    <div class="ph"><span class="chap">CHAPTER IV</span><span class="ptitle">Sky &amp; Margins</span></div>
+    <div class="panel">
+      <span class="lbl">WEATHER · <span id="w-src" style="font-weight:normal;"></span></span>
+      <button class="small" id="wrefresh" type="button" style="float:right;">↻</button>
+      <div style="margin-top:10px;">
+        <span class="wglyph" id="wicon">☁</span> &nbsp;
+        <span class="wtemp" id="wtemp">···</span>
+        <div class="wcond" id="wcond">READING THE SKY…</div>
+      </div>
+      <table class="meta" style="margin-top:10px;">
+        <tr><td class="k">HIGH</td><td class="v" id="w-hi">—</td><td class="k">LOW</td><td class="v" id="w-lo">—</td></tr>
+        <tr><td class="k">WIND</td><td class="v" id="w-wind">—</td><td class="k">HUMIDITY</td><td class="v" id="w-hum">—</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <span class="lbl">QUOTE OF THE DAY · <span id="qidx" style="font-weight:normal;"></span></span>
+      <blockquote id="qtext">“…”</blockquote>
+      <cite id="qauth">—</cite>
+      <button class="small" id="qprev" type="button">◂ PREV</button>
+      <button class="small" id="qnext" type="button">NEXT ▸</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="pager">
+  <button id="pgprev" type="button">◂ PREV</button>
+  <span class="dot" id="d0"></span><span class="dot" id="d1"></span><span class="dot" id="d2"></span><span class="dot" id="d3"></span>
+  &nbsp;<span id="pglabel">1/4</span>&nbsp;
+  <button id="pgnext" type="button">NEXT ▸</button>
+  <button class="small" id="pgauto" type="button">AUTO OFF</button>
+</div>
+
+<div class="tz" id="tzl"><span>‹</span></div>
+<div class="tz" id="tzr"><span>›</span></div>
+
+<script>
+(function(){
+"use strict";
+
+/* Set your city for weather (Kindle has no GPS) */
+var HOME={lat:40.71,lon:-74.01,name:'NEW YORK'};
+
+function $(id){return document.getElementById(id);}
+function pad(n){n=String(n);return n.length<2?'0'+n:n;}
+function addClass(el,c){if(el&&(' '+el.className+' ').indexOf(' '+c+' ')<0){el.className=(el.className?el.className+' ':'')+c;}}
+function rmClass(el,c){if(el){el.className=(' '+el.className+' ').replace(' '+c+' ',' ').replace(/^\s+|\s+$/g,'');}}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+var DAYA=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var DAYN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONA=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function dayKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+
+var flashEl=$('flash');
+function flash(mid){
+  flashEl.style.opacity='1';
+  setTimeout(function(){ if(mid)mid(); setTimeout(function(){flashEl.style.opacity='0';},90); },140);
+}
+$('btnreink').onclick=function(){flash();};
+
+var isDark=store.get('inkday.dark',false);
+function applyDark(){ if(isDark)addClass(document.body,'dark');else rmClass(document.body,'dark');
+  $('btndark').textContent=isDark?'LIGHT':'DARK'; }
+$('btndark').onclick=function(){isDark=!isDark;store.set('inkday.dark',isDark);flash(applyDark);};
+applyDark();
+
+var slides=[$('s0'),$('s1'),$('s2'),$('s3')];
+var NAMES=['THE CLOCK','REMINDERS','THE LOG','SKY & MARGINS'];
+var dots=[$('d0'),$('d1'),$('d2'),$('d3')];
+var cur=store.get('inkday.page',0); if(cur<0||cur>3)cur=0;
+var autoOn=store.get('inkday.auto',false),autoTimer=null;
+
+function paintPager(){
+  $('pglabel').textContent=(cur+1)+'/4 · '+NAMES[cur];
+  for(var i=0;i<4;i++){ if(i===cur)addClass(dots[i],'on');else rmClass(dots[i],'on'); }
+  $('pgauto').textContent=autoOn?'AUTO ON':'AUTO OFF';
+  if(autoOn)addClass($('pgauto'),'onbtn');else rmClass($('pgauto'),'onbtn');
+}
+function showSlide(n){ for(var i=0;i<4;i++){ if(i===n)addClass(slides[i],'on');else rmClass(slides[i],'on'); } window.scrollTo(0,0); }
+function go(n){
+  n=((n%4)+4)%4; if(n===cur)return;
+  flash(function(){ cur=n; store.set('inkday.page',cur); showSlide(cur); paintPager(); });
+  resetAuto();
+}
+$('pgprev').onclick=function(){go(cur-1);};
+$('pgnext').onclick=function(){go(cur+1);};
+$('tzl').onclick=function(){go(cur-1);};
+$('tzr').onclick=function(){go(cur+1);};
+for(var di=0;di<4;di++){ (function(i){ dots[i].onclick=function(){go(i);}; })(di); }
+
+function resetAuto(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+  if(autoOn){autoTimer=setInterval(function(){go(cur+1);},30000);}
+}
+$('pgauto').onclick=function(){autoOn=!autoOn;store.set('inkday.auto',autoOn);paintPager();resetAuto();};
+
+var tX=null,tY=null;
+document.addEventListener('touchstart',function(e){tX=e.touches[0].clientX;tY=e.touches[0].clientY;},false);
+document.addEventListener('touchend',function(e){
+  if(tX==null)return;
+  var dx=e.changedTouches[0].clientX-tX,dy=e.changedTouches[0].clientY-tY;
+  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.4){go(cur+(dx<0?1:-1));}
+  tX=null;
+},false);
+
+/* clock */
+var ticksEl=$('ticks'),cells=[];
+for(var ci=0;ci<60;ci++){var sp=document.createElement('span');ticksEl.appendChild(sp);cells.push(sp);}
+var prevSec=-1,lastMin=-1;
+function paintSec(s){
+  if(s<prevSec){for(var i=0;i<60;i++)rmClass(cells[i],'on');prevSec=-1;}
+  for(var j=prevSec+1;j<=s;j++)addClass(cells[j],'on');
+  prevSec=s;
+}
+function greeting(h){
+  if(h<5)return'Deep night. The lamp and the page conspire.';
+  if(h<8)return'Early hours — the best words are still warm.';
+  if(h<12)return'Good morning. Coffee first, chapters second.';
+  if(h<17)return'Good afternoon. A fine hour for a long paragraph.';
+  if(h<21)return'Good evening. Time to slow down with something good.';
+  return'Late. One more chapter — then sleep, honestly.';
+}
+(function(){
+  var o=-new Date().getTimezoneOffset()/60,sg=o>=0?'+':'-',a=Math.abs(o);
+  $('tztag').textContent='UTC'+sg+pad(Math.floor(a))+':'+pad(Math.round(a%1)*60)+' · '+DAYA[new Date().getDay()].toUpperCase();
+})();
+
+/* stats */
+function getStats(){var s=store.get('inkday.stats',{tasks:0,days:{},log:[]});if(!s.days)s.days={};if(!s.log)s.log=[];return s;}
+function saveStats(s){store.set('inkday.stats',s);}
+function bumpTasks(n){var s=getStats();s.tasks=Math.max(0,(s.tasks||0)+n);saveStats(s);renderStats();}
+function renderStats(){
+  var s=getStats(),k=dayKey(new Date()),today=s.days[k]||{s:0,m:0};
+  $('st-ses').textContent=today.s; $('st-min').textContent=today.m; $('st-task').textContent=s.tasks||0;
+  var streak=0,d=new Date();
+  if(!(s.days[dayKey(d)]&&s.days[dayKey(d)].s))d.setDate(d.getDate()-1);
+  while(s.days[dayKey(d)]&&s.days[dayKey(d)].s&&streak<999){streak++;d.setDate(d.getDate()-1);}
+  $('st-streak').textContent=streak;
+  var sStr='',i;
+  if(today.s>0){var mx=Math.min(today.s,8);for(i=0;i<mx;i++)sStr+='● ';sStr+='('+today.s+')';}
+  else sStr='none yet';
+  $('tomatoes').textContent=sStr;
+}
+function renderLog(){
+  var s=getStats(),el=$('slog'),html='';
+  if(!s.log.length){el.innerHTML='<li class="empty">No tomatoes yet. The vine is waiting.</li>';return;}
+  for(var i=0;i<s.log.length;i++){var e=s.log[i];html+='<li>'+esc(e.d)+' · '+esc(e.t)+' — <b>'+e.m+' MIN</b></li>';}
+  el.innerHTML=html;
+}
+
+/* reminders */
+function tomorrow9(){var d=new Date();d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return d.getTime();}
+var reminders=store.get('inkday.rem',null);
+if(!reminders){
+  var n0=Date.now();
+  reminders=[
+    {id:'seed1',text:'Read 20 pages of whatever you love',due:n0+2*3600000,done:false},
+    {id:'seed2',text:'Water the ferns',due:tomorrow9(),done:false},
+    {id:'seed3',text:'Charge the Kindle before it naps',due:n0+3*86400000,done:false}
+  ];
+  store.set('inkday.rem',reminders);
+}
+function saveRem(){store.set('inkday.rem',reminders);}
+function fmtShort(d){var h=d.getHours();return DAYA[d.getDay()]+' '+(h%12||12)+':'+pad(d.getMinutes())+' '+(h>=12?'PM':'AM');}
+function relChip(ms){
+  var m=Math.round(Math.abs(ms)/60000),h=Math.floor(m/60),mm=m%60,dd=Math.floor(h/24);
+  if(ms>=0){
+    if(m<1)return['now','soon'];
+    if(m<60)return['in '+m+'m','soon'];
+    if(h<24)return['in '+h+'h '+pad(mm)+'m',''];
+    return['in '+dd+'d '+(h%24)+'h',''];
+  }
+  if(m<60)return[(m||1)+'m late','over'];
+  if(h<24)return[h+'h '+pad(mm)+'m late','over'];
+  return[dd+'d '+(h%24)+'h late','over'];
+}
+var refs=[];
+function renderList(){
+  var open=[],done=[],i;
+  for(i=0;i<reminders.length;i++){(reminders[i].done?done:open).push(reminders[i]);}
+  open.sort(function(a,b){return a.due-b.due;});
+  done.sort(function(a,b){return b.due-a.due;});
+  var html='',all=open.concat(done);
+  for(i=0;i<all.length;i++){
+    var r=all[i];
+    html+='<li class="'+(r.done?'done':'')+'" data-id="'+r.id+'">'
+        +'<button class="check" type="button">'+(r.done?'✕':'')+'</button>'
+        +'<button class="del" type="button">×</button>'
+        +'<div style="overflow:hidden;"><div class="rtext">'+esc(r.text)+'</div>'
+        +'<div class="rmeta">'+fmtShort(new Date(r.due))+' · <span class="chip"></span></div></div></li>';
+  }
+  $('rlist').innerHTML=html;
+  $('rempty').style.display=all.length?'none':'block';
+  $('rclear').style.display=done.length?'inline-block':'none';
+  refs=[];
+  var lis=$('rlist').getElementsByTagName('li');
+  for(i=0;i<lis.length;i++){
+    var li=lis[i],chip=null,spans=li.getElementsByTagName('span');
+    for(var j=0;j<spans.length;j++){if((' '+spans[j].className+' ').indexOf(' chip ')>=0){chip=spans[j];break;}}
+    refs.push({id:li.getAttribute('data-id'),li:li,chip:chip});
+  }
+  dynamics(new Date());
+}
+$('rlist').onclick=function(e){
+  e=e||window.event; var t=e.target||e.srcElement;
+  var cls=t.className||'';
+  if(cls.indexOf('check')<0&&cls.indexOf('del')<0)return;
+  var row=t; while(row&&row.tagName!=='LI')row=row.parentNode; if(!row)return;
+  var id=row.getAttribute('data-id'),r=null,i;
+  for(i=0;i<reminders.length;i++)if(reminders[i].id===id)r=reminders[i];
+  if(!r)return;
+  if(cls.indexOf('check')>=0){ r.done=!r.done; bumpTasks(r.done?1:-1); }
+  else{ var arr=[]; for(i=0;i<reminders.length;i++)if(reminders[i].id!==id)arr.push(reminders[i]); reminders=arr; }
+  saveRem(); flash(renderList);
+};
+$('rclear').onclick=function(){
+  var arr=[];for(var i=0;i<reminders.length;i++)if(!reminders[i].done)arr.push(reminders[i]);
+  reminders=arr;saveRem();flash(renderList);
+};
+
+var pendingDue=null,dayOff=0;
+(function(){
+  var hsel=$('rhh'),msel=$('rmm'),i,o;
+  for(i=0;i<24;i++){o=document.createElement('option');o.value=pad(i);o.textContent=pad(i);hsel.appendChild(o);}
+  for(i=0;i<60;i++){o=document.createElement('option');o.value=pad(i);o.textContent=pad(i);msel.appendChild(o);}
+  var nd=new Date(Date.now()+3600000);
+  hsel.value=pad(nd.getHours()); msel.value=pad(nd.getMinutes());
+})();
+function fmtTag(d){var h=d.getHours();return MONA[d.getMonth()]+' '+d.getDate()+' · '+(h%12||12)+':'+pad(d.getMinutes())+' '+(h>=12?'PM':'AM');}
+function syncTag(){
+  var tag=$('daytag');
+  if(pendingDue){tag.textContent=fmtTag(new Date(pendingDue));addClass(tag,'live');}
+  else{tag.textContent=dayOff?'TOMORROW':'TODAY';rmClass(tag,'live');}
+}
+$('daytag').onclick=function(){if(pendingDue)pendingDue=null;else dayOff=dayOff?0:1;syncTag();};
+$('p30').onclick=function(){pendingDue=Date.now()+30*60000;syncTag();};
+$('p60').onclick=function(){pendingDue=Date.now()+60*60000;syncTag();};
+$('p240').onclick=function(){pendingDue=Date.now()+240*60000;syncTag();};
+$('radd').onclick=function(){
+  var inp=$('rtext'),text=inp.value.replace(/^\s+|\s+$/g,'');
+  if(!text){flash();inp.focus();return;}
+  var due;
+  if(pendingDue){due=pendingDue;}
+  else{
+    var d=new Date(); if(dayOff)d.setDate(d.getDate()+1);
+    d.setHours(parseInt($('rhh').value,10),parseInt($('rmm').value,10),0,0);
+    if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);
+    due=d.getTime();
+  }
+  reminders.push({id:'r'+Date.now()+Math.floor(Math.random()*999),text:text,due:due,done:false});
+  saveRem(); inp.value=''; pendingDue=null; dayOff=0; syncTag(); flash(renderList);
+};
+
+function fmtCountdown(ms){
+  var s=Math.floor(ms/1000);
+  if(s>=86400)return Math.floor(s/86400)+'d '+Math.floor((s%86400)/3600)+'h '+Math.floor((s%3600)/60)+'m';
+  return pad(Math.floor(s/3600))+':'+pad(Math.floor((s%3600)/60))+':'+pad(s%60);
+}
+function dynamics(now){
+  var t=now.getTime(),i,j;
+  for(i=0;i<refs.length;i++){
+    var ref=refs[i],r=null;
+    for(j=0;j<reminders.length;j++)if(reminders[j].id===ref.id)r=reminders[j];
+    if(!r||!ref.chip)continue;
+    if(r.done){ref.chip.textContent='done';ref.chip.className='chip done';continue;}
+    var rc=relChip(r.due-t);
+    ref.chip.textContent=rc[0];
+    ref.chip.className='chip'+(rc[1]?' '+rc[1]:'');
+  }
+  var open=null;
+  for(i=0;i<reminders.length;i++){
+    if(!reminders[i].done&&(!open||reminders[i].due<open.due))open=reminders[i];
+  }
+  var box=$('nextup'),tx=$('nutext'),cx=$('nucount');
+  if(box&&tx&&cx){
+    if(!open){tx.textContent='All clear — the margin is yours.';cx.textContent='—';}
+    else{
+      tx.textContent=open.text;
+      var d=open.due-t;
+      cx.textContent=(d<0?'overdue · ':'in ')+fmtCountdown(Math.abs(d));
+    }
+  }
+}
+
+/* quote of the day */
+var QUOTES=[
+ ['A reader lives a thousand lives before he dies.','George R. R. Martin'],
+ ['There is no friend as loyal as a book.','Ernest Hemingway'],
+ ['Books are a uniquely portable magic.','Stephen King'],
+ ['A room without books is like a body without a soul.','Cicero'],
+ ['Reading gives us someplace to go when we have to stay where we are.','Mason Cooley'],
+ ['Literature is the most agreeable way of ignoring life.','Fernando Pessoa'],
+ ['I have always imagined that Paradise will be a kind of library.','Jorge Luis Borges'],
+ ['Until I feared I would lose it, I never loved to read.','Harper Lee'],
+ ['Reading is to the mind what exercise is to the body.','Joseph Addison'],
+ ['The more that you read, the more things you will know.','Dr. Seuss']
+];
+function dailyQi(){
+  var d=new Date(),s=new Date(d.getFullYear(),0,1);
+  var doy=Math.floor((d-s)/86400000),v=d.getFullYear()*7+doy;
+  return ((v%QUOTES.length)+QUOTES.length)%QUOTES.length;
+}
+var qi=dailyQi(),qDay=dayKey(new Date());
+function renderQuote(){
+  $('qtext').textContent='“'+QUOTES[qi][0]+'”';
+  $('qauth').textContent='— '+QUOTES[qi][1];
+  $('qidx').textContent=(qi+1)+'/'+QUOTES.length;
+}
+$('qprev').onclick=function(){qi=(qi-1+QUOTES.length)%QUOTES.length;renderQuote();};
+$('qnext').onclick=function(){qi=(qi+1)%QUOTES.length;renderQuote();};
+
+/* weather */
+var GLYPH={sun:'☀',partly:'☁',cloud:'☁',rain:'☂',snow:'❄',storm:'⚡',fog:'≋'};
+var WMO={0:['CLEAR SKIES','sun'],1:['MOSTLY CLEAR','sun'],2:['PARTLY CLOUDY','cloud'],3:['OVERCAST','cloud'],45:['FOG','fog'],48:['ICY FOG','fog'],51:['LIGHT DRIZZLE','rain'],53:['DRIZZLE','rain'],55:['HEAVY DRIZZLE','rain'],61:['LIGHT RAIN','rain'],63:['RAIN','rain'],65:['HEAVY RAIN','rain'],71:['LIGHT SNOW','snow'],73:['SNOW','snow'],75:['HEAVY SNOW','snow'],80:['SHOWERS','rain'],81:['SHOWERS','rain'],82:['HEAVY SHOWERS','rain'],85:['SNOW SHOWERS','snow'],86:['SNOW SHOWERS','snow'],95:['THUNDERSTORM','storm'],96:['STORM','storm'],99:['STORM','storm']};
+function setW(w){
+  if(!w){$('wtemp').textContent='···';$('wcond').textContent='READING THE SKY…';$('wicon').textContent='☁';$('w-src').textContent='';return;}
+  var wc=WMO[w.code]||['UNCHARTED SKIES','cloud'];
+  $('wicon').textContent=GLYPH[wc[1]]||'☁';
+  $('wtemp').textContent=w.t+'°';
+  $('wcond').textContent=wc[0];
+  $('w-hi').textContent=w.hi+'°';$('w-lo').textContent=w.lo+'°';
+  $('w-wind').textContent=w.wind+' km/h';$('w-hum').textContent=w.hum+'%';
+  $('w-src').textContent=w.src;
+}
+function xhrGet(url,timeout,ok,fail){
+  if(!window.XMLHttpRequest){fail();return;}
+  var x=new XMLHttpRequest(),done=false;
+  var t=setTimeout(function(){if(!done){done=true;try{x.abort();}catch(e){}fail();}},timeout);
+  x.open('GET',url,true);
+  x.onreadystatechange=function(){
+    if(x.readyState===4&&!done){
+      done=true;clearTimeout(t);
+      if(x.status===200)ok(x.responseText);else fail();
+    }
+  };
+  try{x.send(null);}catch(e){if(!done){done=true;clearTimeout(t);fail();}}
+}
+function simWeather(){
+  var d=new Date(),mo=d.getMonth();
+  var t=[3,4,8,12,17,21,26,25,20,14,8,4][mo],codes=[3,2,61,1,0,2,0,1,61,3,71,3];
+  setW({t:t,code:codes[mo],hi:t+4,lo:t-5,wind:5+d.getDate()%14,hum:38+(d.getDate()*7)%45,src:'SAMPLE · OFFLINE'});
+}
+function loadWeather(){
+  setW(null);
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+HOME.lat+'&longitude='+HOME.lon
+    +'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m'
+    +'&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto';
+  xhrGet(url,9000,function(txt){
+    try{
+      var j=JSON.parse(txt);
+      setW({t:Math.round(j.current.temperature_2m),code:j.current.weather_code,
+        hi:Math.round(j.daily.temperature_2m_max[0]),lo:Math.round(j.daily.temperature_2m_min[0]),
+        wind:Math.round(j.current.wind_speed_10m),hum:Math.round(j.current.relative_humidity_2m),
+        src:'LIVE · '+HOME.name});
+    }catch(e){simWeather();}
+  },simWeather);
+}
+$('wrefresh').onclick=function(){flash(loadWeather);};
+
+/* tomato timer */
+var T={dur:1500,rem:1500,run:false,end:0};
+function tdraw(){
+  $('trem').textContent=pad(Math.floor(T.rem/60))+':'+pad(T.rem%60);
+  $('tfill').style.width=Math.round((T.dur-T.rem)/T.dur*100)+'%';
+  $('tstart').textContent=T.run?'PAUSE':(T.rem===T.dur?'START':'RESUME');
+}
+function tset(min,btn){
+  var ids=['t15','t25','t45'];
+  for(var i=0;i<ids.length;i++)rmClass($(ids[i]),'onbtn');
+  addClass(btn,'onbtn');
+  T.dur=min*60;T.rem=T.dur;T.run=false;tdraw();
+}
+$('t15').onclick=function(){tset(15,$('t15'));};
+$('t25').onclick=function(){tset(25,$('t25'));};
+$('t45').onclick=function(){tset(45,$('t45'));};
+$('tstart').onclick=function(){
+  if(T.rem<=0)T.rem=T.dur;
+  if(T.run){T.run=false;$('tnote').textContent='Paused — the tomato keeps your place.';}
+  else{T.run=true;T.end=Date.now()+T.rem*1000;$('tnote').textContent='Focusing… the tomato is ticking.';}
+  tdraw();
+};
+$('treset').onclick=function(){T.run=false;T.rem=T.dur;tdraw();$('tnote').textContent='One tomato = one focused session. Finish it to log it.';};
+function timerTick(now){
+  if(!T.run)return;
+  T.rem=Math.max(0,Math.round((T.end-now.getTime())/1000));
+  if(T.rem===0){T.run=false;completeSession();}
+  tdraw();
+}
+function completeSession(){
+  flash();
+  var s=getStats(),k=dayKey(new Date()),now=new Date();
+  s.days[k]=s.days[k]||{s:0,m:0};s.days[k].s++;s.days[k].m+=Math.round(T.dur/60);
+  s.log.unshift({d:MONA[now.getMonth()]+' '+now.getDate(),t:pad(now.getHours())+':'+pad(now.getMinutes()),m:Math.round(T.dur/60)});
+  if(s.log.length>7)s.log.length=7;
+  saveStats(s);renderStats();renderLog();
+  addClass($('stamp'),'show');
+  setTimeout(function(){rmClass($('stamp'),'show');},3000);
+  $('tnote').textContent='Tomato logged — '+Math.round(T.dur/60)+' minutes shelved. Take a breath.';
+  setTimeout(function(){T.rem=T.dur;tdraw();},4000);
+}
+
+/* network */
+function paintNet(){
+  var on=(typeof navigator.onLine==='undefined')?true:navigator.onLine;
+  $('netlabel').textContent=on?'WI-FI':'OFFLINE';
+}
+if(window.addEventListener){
+  window.addEventListener('online',paintNet,false);
+  window.addEventListener('offline',paintNet,false);
+}
+paintNet();
+
+/* main tick */
+function tick(){
+  var now=new Date(),h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  $('hh').textContent=pad(h%12||12);
+  $('mm').textContent=pad(m);
+  $('ampm').textContent=h>=12?'PM':'AM';
+  $('ss').textContent=pad(s);
+  paintSec(s);
+  if(m!==lastMin){
+    lastMin=m;
+    $('dateline').textContent=DAYN[now.getDay()]+', '+MON[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+    $('greet').textContent=greeting(h);
+    var k=dayKey(now);
+    if(k!==qDay){qDay=k;qi=dailyQi();renderQuote();}
+    document.title=pad(h%12||12)+':'+pad(m)+' · INKDAY';
+  }
+  var start=new Date(now);start.setHours(0,0,0,0);
+  var p=(now-start)/86400000;
+  $('dayfill').style.width=Math.round(p*100)+'%';
+  $('daypct').textContent=(Math.round(p*1000)/10)+'%';
+  dynamics(now);
+  timerTick(now);
+}
+
+/* init */
+showSlide(cur);paintPager();resetAuto();
+syncTag();renderList();renderQuote();renderStats();renderLog();tdraw();loadWeather();
+flash();
+tick();setInterval(tick,1000);
+})();
+</script>
+</body>
+</html>
